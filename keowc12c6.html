@@ -47,7 +47,6 @@
 
     .bet-box {
         width: 100%;
-        height: 75%;
         display: flex;
     }
 
@@ -56,7 +55,7 @@
         justify-content: center;
         align-items: center;
         padding: 5px 0px;
-        font-size: 30px;
+        font-size: 27px;
         font-weight: 600;
     }
 
@@ -75,6 +74,7 @@
     }
 
     .member-box {
+        padding-top: 8px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -87,11 +87,45 @@
     }
 
     .member-name {
+        position: relative;
         border-bottom: 1px solid #ccc;
         text-align: center;
         width: 100%;
         padding: 4px 0;
         font-size: 17px;
+    }
+
+    .remove-member {
+        position: absolute;
+        right: 5px;
+        bottom: 2px;
+        cursor: pointer;
+        padding: 2px;
+        color: red;
+        background-color: #ccc;
+    }
+
+    .admin-page {
+        display: none;
+        width: 100%;
+        height: 100%;
+       
+        flex-direction: column;
+        align-items: center;
+    } 
+
+    .admin-input {
+        width: 90%;
+        border: 1px solid #ccc;
+        outline: none;
+        padding: 5px;
+        margin: 3px 5px;
+    }
+
+    .close-bet {
+        margin: 10px 0;
+        padding: 5px;
+        width: fit-content;
     }
 </style>
 
@@ -124,6 +158,16 @@
             </div>
         </div>
     </div>
+
+    <div class="admin-page">
+        <button class="close-bet">Change State</button>
+        <input id="admin-a-side-country-name" class="admin-input" placeholder="a side country name"/>
+        <input id="admin-b-side-country-name" class="admin-input" placeholder="b side country name"/>
+        <input id="admin-a-side-flag-url" class="admin-input" placeholder="a side flag url"/>
+        <input id="admin-b-side-flag-url"  class="admin-input" placeholder="b side flag url"/>
+        <input id="admin-match-info"  class="admin-input" placeholder="match info" />
+        <button id="admin-update">UPDATE</button>
+    </div>
 </body>
 <script>
         async function get() {
@@ -137,30 +181,59 @@
                 console.log(xhr.status);
                 console.log(xhr.responseText);
                 data = JSON.parse(xhr.responseText);
+                isInMatch = data["isInMatch"];
 
+                if(data["isInMatch"]) {
+                    aMembersAddButton.style.display = "none";
+                    bMembersAddButton.style.display = "none";
+                }
                 titleACountryName.innerText = data["a-side-country"];
                 titleBCountryName.innerText = data["b-side-country"];
+                adminASideCountryName.value = data["a-side-country"];
+                adminBSideCountryName.value = data["b-side-country"];
 
-                matchInfo[0].innerText = data["match-info"]
+                matchInfo[0].innerText = data["match-info"];
+                adminMatchInfo.value = data["match-info"];
 
                 countryFlags[0].src = data["a-side-flags"];
                 countryFlags[1].src = data["b-side-flags"];
+                adminASideFlagUrl.value = data["a-side-flags"];
+                adminBSideFlagUrl.value = data["b-side-flags"];
 
                 betCountryName[0].innerText = data["a-side-country"];
                 betCountryName[1].innerText = data["b-side-country"];
 
                 for(let name of data["a-side-members"]) {
                     let div = document.createElement("div");
+                    let span = document.createElement("span");
+
+                    span.className = "remove-member";
+                    span.innerText = "X";
                     div.className = "member-name";
                     div.innerText = name;
 
+                    span.onclick = () => {
+                        removeMember(name, "a-side-members");
+                    }
+                    if(!data["isInMatch"])
+                    div.appendChild(span);
                     memberBox[0].appendChild(div);
                 }
 
                 for(let name of data["b-side-members"]) {
                     let div = document.createElement("div");
-                    div.innerText = name;
+                    let span = document.createElement("span");
+
+                    span.className = "remove-member";
+                    span.innerText = "X";
                     div.className = "member-name";
+                    div.innerText = name;
+
+                    span.onclick = () => {
+                        removeMember(name, "b-side-members");
+                    }
+                    if(!data["isInMatch"])
+                    div.appendChild(span);
                     memberBox[1].appendChild(div);
                 }
             }
@@ -188,9 +261,17 @@
 
         xhr.send(sendData);
     }
+
+    function removeMember(name, side) {
+        data[side] = data[side].filter(value => value != name);
+        update(JSON.stringify(data));
+    }
 </script>
 <script>
     let data = {};
+    let aClick, bClick, isInMatch;
+    aClick = 0;
+    bClick = 0;
     let titleACountryName = document.getElementById("a-side-country");
     let titleBCountryName = document.getElementById("b-side-country");
     let aMembersAddButton = document.getElementById("a-members-add-button");
@@ -200,6 +281,15 @@
     let matchInfo = document.getElementsByClassName("match-info");
     let countryFlags = document.getElementsByTagName("img");
 
+
+    //adminPage
+    let adminASideCountryName = document.getElementById("admin-a-side-country-name");
+    let adminBSideCountryName = document.getElementById("admin-b-side-country-name");
+    let adminASideFlagUrl = document.getElementById("admin-a-side-flag-url");
+    let adminBSideFlagUrl = document.getElementById("admin-b-side-flag-url");
+    let adminMatchInfo = document.getElementById("admin-match-info");
+    let adminUpdate = document.getElementById("admin-update");
+    let adminChangeState = document.getElementsByClassName("close-bet")[0];
     get();
 
     aMembersAddButton.onclick = function() {
@@ -212,6 +302,38 @@
         let name = prompt("Please enter your name", "Name");
         data["b-side-members"].push(name);
         update(JSON.stringify(data));
+    }
+
+    countryFlags[0].onclick = () =>  {
+        aClick++;
+        tryOpenAdminPage();
+    }
+
+    countryFlags[1].onclick = () =>  {
+        bClick++;
+        tryOpenAdminPage();
+    }
+
+    adminChangeState.onclick = () => {
+        isInMatch = !isInMatch;
+    }
+    adminUpdate.onclick = () => {
+        data["a-side-country"] = adminASideCountryName.value;
+        data["b-side-country"] = adminBSideCountryName.value;
+
+        data["a-side-flags"] = adminASideFlagUrl.value;
+        data["b-side-flags"] = adminBSideFlagUrl.value;
+
+        data["match-info"] = adminMatchInfo.value;
+        data["isInMatch"] = isInMatch;
+        update(JSON.stringify(data));
+    }
+
+    function tryOpenAdminPage() {
+        if(aClick == 2 && bClick == 3) {
+            document.getElementsByClassName("root")[0].style.display = "none";
+            document.getElementsByClassName("admin-page")[0].style.display = "flex";
+        }
     }
 </script>
 
