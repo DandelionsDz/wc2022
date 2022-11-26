@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keo WC 2022 12c6</title>
+</head>
+<style>
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    .root {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .a-side,
+    .b-side {
+        width: 49%;
+    }
+
+    .a-side {
+        border-right: 1px solid #ccc;
+    }
+
+    .b-side {
+        border-left: 1px solid #ccc;
+    }
+
+    .title-match {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        flex-direction: column;
+        height: 20%;
+    }
+
+    .bet-box {
+        width: 100%;
+        height: 75%;
+        display: flex;
+    }
+
+    .match-name {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 5px 0px;
+        font-size: 30px;
+        font-weight: 600;
+    }
+
+    .country-name {
+        margin-right: 10px;
+        font-family: 'Courier New', Courier, monospace;
+        font-style: italic;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 28px;
+    }
+
+    img {
+        margin: 0 8px;
+    }
+
+    .member-box {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    #a-side-country {
+        display: block;
+        margin-right: 5px;
+    }
+
+    .member-name {
+        border-bottom: 1px solid #ccc;
+        text-align: center;
+        width: 100%;
+        padding: 4px 0;
+        font-size: 17px;
+    }
+</style>
+
+<body>
+    <div class="root">
+        <div class="title-match">
+            <span class="match-name"> <img
+                    width="40" height="40" alt=""> <span id="a-side-country"></span>VS<img
+                    width="40" height="40" alt=""> <span id="b-side-country"></span></span>
+            <span class="match-info"></span>
+        </div>
+        <div class="bet-box">
+            <div class="a-side">
+                <div style="display: flex; justify-content: center;">
+                    <div class="country-name">
+                    </div>
+                    <button id="a-members-add-button">+</button>
+                </div>
+                <div class="member-box">
+                </div>
+            </div>
+            <div class="b-side">
+                <div style="display: flex; justify-content: center;">
+                    <div class="country-name">
+                    </div>
+                    <button id="b-members-add-button">+</button>
+                </div>
+                <div class="member-box">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+        async function get() {
+        var url = "https://63813af5786e112fe1c53dce.mockapi.io/12c6/bet/2305";
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                console.log(xhr.status);
+                console.log(xhr.responseText);
+                data = JSON.parse(xhr.responseText);
+
+                titleACountryName.innerText = data["a-side-country"];
+                titleBCountryName.innerText = data["b-side-country"];
+
+                matchInfo[0].innerText = data["match-info"]
+
+                countryFlags[0].src = data["a-side-flags"];
+                countryFlags[1].src = data["b-side-flags"];
+
+                betCountryName[0].innerText = data["a-side-country"];
+                betCountryName[1].innerText = data["b-side-country"];
+
+                for(let name of data["a-side-members"]) {
+                    let div = document.createElement("div");
+                    div.className = "member-name";
+                    div.innerText = name;
+
+                    memberBox[0].appendChild(div);
+                }
+
+                for(let name of data["b-side-members"]) {
+                    let div = document.createElement("div");
+                    div.innerText = name;
+                    div.className = "member-name";
+                    memberBox[1].appendChild(div);
+                }
+            }
+        };
+
+        xhr.send();
+
+    }
+
+    function update(sendData) {
+        var url = "https://63813af5786e112fe1c53dce.mockapi.io/12c6/bet/2305";
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("PUT", url);
+
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                console.log(xhr.status);
+                console.log(xhr.responseText);
+                location.reload();
+            }
+        };
+
+        xhr.send(sendData);
+    }
+</script>
+<script>
+    let data = {};
+    let titleACountryName = document.getElementById("a-side-country");
+    let titleBCountryName = document.getElementById("b-side-country");
+    let aMembersAddButton = document.getElementById("a-members-add-button");
+    let bMembersAddButton = document.getElementById("b-members-add-button");
+    let betCountryName = document.getElementsByClassName("country-name");
+    let memberBox = document.getElementsByClassName("member-box");
+    let matchInfo = document.getElementsByClassName("match-info");
+    let countryFlags = document.getElementsByTagName("img");
+
+    get();
+
+    aMembersAddButton.onclick = function() {
+        let name = prompt("Please enter your name", "Name");
+        data["a-side-members"].push(name);
+        update(JSON.stringify(data));
+    }
+
+    bMembersAddButton.onclick = function() {
+        let name = prompt("Please enter your name", "Name");
+        data["b-side-members"].push(name);
+        update(JSON.stringify(data));
+    }
+</script>
+
+</html>
